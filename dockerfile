@@ -1,15 +1,17 @@
-# Use an official Node.js image
 FROM node:18-slim
 
-# Set working directory
 WORKDIR /app
 
-# Copy package.json and install dependencies
+# Install Python and other build essentials required for native modules
+RUN apt-get update && apt-get install -y python3 python3-pip python3-distutils && rm -rf /var/lib/apt/lists/*
+
+# Copy package files
 COPY package*.json ./
+
+# Install dependencies
 RUN npm ci
 
-# Copy the rest of the app
+# Copy rest of the app
 COPY . .
 
-# Run your bot
 CMD ["npm", "start"]
