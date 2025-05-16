@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>YouTube Video Downloader</title>
+    <style>
+        body { font-family: Arial, sans-serif; text-align: center; padding: 50px; background-color: #f4f4f4; }
+        input, select, button { padding: 10px; margin: 10px; width: 80%; max-width: 400px; }
+        .error-message { color: red; font-weight: bold; margin-top: 20px; }
+    </style>
+</head>
+<body>
+    <h1>YouTube Video Downloader</h1>
+    
+    <form id="downloadForm">
+        <label for="url">Video URL:</label><br>
+        <input type="text" id="url" name="url" placeholder="Enter YouTube URL" required><br><br>
+
+        <label for="quality">Select Quality:</label><br>
+        <select name="quality" id="quality">
+            <option value="360p">360p</option>
+            <option value="480p">480p</option>
+            <option value="720p">720p</option>
+            <option value="1080p">1080p</option>
+        </select><br><br>
+
+        <button type="submit" id="downloadBtn">Download Video</button>
+    </form>
+
+    <p id="status"></p>
+
+    <script>
+        function resetDownloadStatus() {
+            localStorage.removeItem("downloadStatus");
+        }
+
+        function updatePageState() {
+            const downloadStatus = localStorage.getItem("downloadStatus");
+            const statusText = document.getElementById("status");
+            const downloadBtn = document.getElementById("downloadBtn");
+
+            if (downloadStatus === "downloading") {
+                downloadBtn.disabled = true;
+                statusText.innerHTML = "Downloading... Please wait.";
+            } else {
+                statusText.innerHTML = "";
+                downloadBtn.disabled = false;
+                resetDownloadStatus(); 
+            }
+        }
+
+        // Auto-refresh page when navigating back to prevent caching issues
+        window.onpageshow = function(event) {
+            if (event.persisted) {
+                location.reload();  // Force reload on back navigation
+            } else {
+                updatePageState();
+            }
+        };
+
+        document.getElementById("downloadForm").addEventListener("submit", async function (event) {
+            event.preventDefault();
+            const downloadBtn = document.getElementById("downloadBtn");
+            const statusText = document.getElementById("status");
+
+            if (downloadBtn.disabled) return;
+
+            localStorage.setItem("downloadStatus", "downloading");
+            downloadBtn.disabled = true;
+            statusText.innerHTML = "Downloading... Please wait.";
+
+            const url = document.getElementById("url").value;
+            const quality = document.getElementById("quality").value;
+
+            // Add a cache buster to prevent duplicate downloads
+            const cacheBuster = new Date().getTime();
+
+            try {
+                const response = await fetch(`/download?cache=${cacheBuster}`, {
+                    method: 'POST',
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ url, quality })
+                });
+
+                const data = await response.json();
+
+                if (data.download_link) {
+                    window.location.href = data.download_link;
+                    statusText.innerHTML = "Download complete!";
+                    localStorage.setItem("downloadStatus", "completed");
+
+                    // Clear localStorage and re-enable button after 3 sec
+                    setTimeout(() => { 
+                        statusText.innerHTML = ""; 
+                        resetDownloadStatus(); 
+                        downloadBtn.disabled = false;
+                    }, 3000);
+                } else {
+                    statusText.innerHTML = `Error: ${data.error}`;
+                    resetDownloadStatus();
+                    downloadBtn.disabled = false;
+                }
+            } catch (error) {
+                statusText.innerHTML = `Error occurred: ${error.message}`;
+                resetDownloadStatus();
+                downloadBtn.disabled = false;
+            }
+        });
+
+        // Reset status when the user leaves the page
+        window.onbeforeunload = resetDownloadStatus;
+    </script>
+</body>
+</html>
