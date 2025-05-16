@@ -2,16 +2,14 @@ FROM node:18-slim
 
 WORKDIR /app
 
-# Install Python and other build essentials required for native modules
-RUN apt-get update && apt-get install -y python3 python3-pip python3-distutils && rm -rf /var/lib/apt/lists/*
+RUN apt-get update && apt-get install -y python3 python3-distutils && ln -s /usr/bin/python3 /usr/bin/python
 
-# Copy package files
 COPY package*.json ./
 
-# Install dependencies
+ENV NODE_ENV=development
 RUN npm ci
+ENV NODE_ENV=production
 
-# Copy rest of the app
 COPY . .
 
 CMD ["npm", "start"]
