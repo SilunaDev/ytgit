@@ -1,22 +1,20 @@
-# Use official Node.js image as base
 FROM node:18-slim
 
-# Install python3 and pip
-RUN apt-get update && apt-get install -y python3 python3-pip && \
-    rm -rf /var/lib/apt/lists/*
+# Install system deps including python3 and build tools
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    python3 python3-pip python3-dev build-essential git curl \
+    libnss3 libatk1.0-0 libatk-bridge2.0-0 libcups2 libgbm1 libasound2 libpangocairo-1.0-0 \
+    libxss1 libgtk-3-0 libxshmfence1 libglu1 chromium \
+    && ln -s /usr/bin/python3 /usr/bin/python \
+    && rm -rf /var/lib/apt/lists/*
 
-# Set working directory
 WORKDIR /app
 
-# Copy package.json and package-lock.json and install dependencies
 COPY package*.json ./
-RUN npm ci
 
-# Copy the rest of your app files
+# Run npm ci with verbose to see detailed errors if any
+RUN npm ci --verbose
+
 COPY . .
 
-# If you want, set python3 as "python" command for compatibility
-RUN ln -s /usr/bin/python3 /usr/bin/python
-
-# Default command to run your Node.js app
 CMD ["npm", "start"]
