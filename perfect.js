@@ -3,7 +3,7 @@ const path = require('path');
 const fs = require('fs');
 const ffmpeg = require('fluent-ffmpeg');
 const ffmpegPath = require('@ffmpeg-installer/ffmpeg').path;
-const ytDlp = require('yt-dlp-exec').raw;  // use raw for more options
+const ytDlp = require('yt-dlp-exec'); // <-- Remove `.raw`
 const schedule = require('node-schedule');
 const { exec } = require('child_process');
 
@@ -24,15 +24,14 @@ app.use(express.urlencoded({ extended: true }));
 app.use(express.static('public'));
 app.use('/downloads', express.static(DOWNLOADS_FOLDER));
 
-// <-- UPDATE this path according to your system (check with `where yt-dlp` on Windows) -->
 const ytDlpGlobalPath = 'C:\\Users\\stormwolf\\AppData\\Local\\Programs\\Python\\Python313\\Scripts\\yt-dlp.exe';
 
-// Get video formats
 async function getFormats(videoUrl) {
   try {
+    // Use 'dumpSingleJson' for yt-dlp to get info JSON
     const result = await ytDlp(videoUrl, {
-      dumpJson: true,
-      executablePath: ytDlpGlobalPath,
+      dumpSingleJson: true,
+      execPath: ytDlpGlobalPath, // Use execPath, NOT executablePath
     });
     return result.formats || [];
   } catch (error) {
@@ -92,7 +91,7 @@ app.post('/download', async (req, res) => {
     isDownloading = true;
 
     const formats = await getFormats(videoUrl);
-    if (!formats) {
+    if (!formats || formats.length === 0) {
       isDownloading = false;
       return res.status(400).json({ error: 'Invalid URL or no formats available' });
     }
@@ -112,7 +111,7 @@ app.post('/download', async (req, res) => {
         '-crf', '23',
         '-movflags', '+faststart'
       ],
-      executablePath: ytDlpGlobalPath,
+      execPath: ytDlpGlobalPath,
     });
 
     res.json({
