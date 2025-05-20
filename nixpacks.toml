@@ -1,0 +1,11 @@
+[phases.setup]
+nixPkgs = ["python3", "ffmpeg"]
+
+[phases.install]
+cmds = ["npm install"]
+
+[phases.build]
+cmds = []
+
+[phases.start]
+cmd = "node perfect.js"  # or replace with your main file
