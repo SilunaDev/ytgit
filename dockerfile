@@ -18,4 +18,4 @@ COPY . .
 EXPOSE 3000
 
 # Start the app (change if your entry is not index.js)
-CMD ["node", "perfect.js.js"]
+CMD ["node", "perfect.js"]
